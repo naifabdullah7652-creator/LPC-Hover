@@ -22,22 +22,12 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Install Spigot 1.8.8 API
-        run: |
-          mkdir -p lib
-          curl -L \
-            "https://hub.spigotmc.org/nexus/content/repositories/snapshots/org/spigotmc/spigot-api/1.8.8-R0.1-SNAPSHOT/spigot-api-1.8.8-R0.1-SNAPSHOT.jar" \
-            -o lib/spigot-api-1.8.8.jar
-
-          test -s lib/spigot-api-1.8.8.jar
-          ls -lh lib/spigot-api-1.8.8.jar
-
       - name: Build LPC-Hover
         run: mvn -f pom.xml clean package -U
 
       - name: Check JAR
         run: |
-          echo "=== TARGET ==="
+          echo "=== BUILD OUTPUT ==="
           ls -lah target/
           test -f target/LPC-Hover-3.7.2.jar
 
