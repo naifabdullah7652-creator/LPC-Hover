@@ -1,4 +1,4 @@
-name: Build Spigot 1.8.8 plugin
+name: Build LPC-Hover 3.7.2
 
 on:
   workflow_dispatch:
@@ -8,28 +8,34 @@ on:
 
 jobs:
   build:
-    name: Build LPC-Hover 3.7.2
+    name: Build Spigot 1.8.8 plugin
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
 
-      - name: Set up Java 8
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 8
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '8'
           cache: maven
 
-      - name: Build LPC-Hover
-        run: mvn -f pom.xml clean package -U
-
-      - name: Check JAR
+      - name: Build Spigot 1.8.8 with BuildTools
         run: |
-          echo "=== BUILD OUTPUT ==="
-          ls -lah target/
-          test -f target/LPC-Hover-3.7.2.jar
+          mkdir -p buildtools
+          cd buildtools
+
+          wget -O BuildTools.jar \
+            https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+
+          java -jar BuildTools.jar --rev 1.8.8
+
+      - name: Build LPC-Hover
+        run: |
+          mvn -f pom.xml clean package -U
 
       - name: Upload LPC-Hover JAR
         uses: actions/upload-artifact@v4
