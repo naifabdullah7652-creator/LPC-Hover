@@ -8,7 +8,6 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -33,11 +32,8 @@ public final class LPC extends JavaPlugin implements Listener {
     private static final Pattern BUKKIT_HEX_PATTERN =
             Pattern.compile("&x(&[A-Fa-f0-9]){6}");
 
-    /*
-     * Private marker used internally to identify the player's name.
-     * It is replaced with a real clickable/hoverable component later.
-     */
-    private static final String NAME_MARKER = "\uE000LPC_NAME\uE001";
+    private static final String NAME_MARKER =
+            "\uE000LPC_NAME\uE001";
 
     private LuckPerms luckPerms;
 
@@ -79,8 +75,8 @@ public final class LPC extends JavaPlugin implements Listener {
                 getLogger().warning(
                         "Detected " + pluginName
                                 + " which may also format chat. "
-                                + "To avoid message duplication, disable "
-                                + "chat formatting in " + pluginName + "."
+                                + "Disable its chat formatting to avoid "
+                                + "duplicate chat messages."
                 );
             }
         }
@@ -97,9 +93,6 @@ public final class LPC extends JavaPlugin implements Listener {
             final String label,
             final String[] args) {
 
-        /*
-         * /lpc reload
-         */
         if (args.length == 1
                 && "reload".equalsIgnoreCase(args[0])
                 && sender.hasPermission("lpc.reload")) {
@@ -113,9 +106,6 @@ public final class LPC extends JavaPlugin implements Listener {
             return true;
         }
 
-        /*
-         * /lpc clear
-         */
         if (args.length == 1
                 && "clear".equalsIgnoreCase(args[0])
                 && sender.hasPermission("lpc.clearchat")) {
@@ -141,9 +131,6 @@ public final class LPC extends JavaPlugin implements Listener {
             return true;
         }
 
-        /*
-         * /lpc debug <player>
-         */
         if (args.length == 2
                 && "debug".equalsIgnoreCase(args[0])
                 && sender.hasPermission("lpc.debug")) {
@@ -160,7 +147,7 @@ public final class LPC extends JavaPlugin implements Listener {
                 return true;
             }
 
-            final CachedMetaData debugMeta =
+            final CachedMetaData meta =
                     luckPerms
                             .getPlayerAdapter(Player.class)
                             .getMetaData(target);
@@ -175,15 +162,15 @@ public final class LPC extends JavaPlugin implements Listener {
             sender.sendMessage(
                     colorize(
                             "&7Primary Group: &f"
-                                    + debugMeta.getPrimaryGroup()
+                                    + meta.getPrimaryGroup()
                     )
             );
 
             sender.sendMessage(
                     colorize(
                             "&7Prefix: &f"
-                                    + (debugMeta.getPrefix() != null
-                                    ? debugMeta.getPrefix()
+                                    + (meta.getPrefix() != null
+                                    ? meta.getPrefix()
                                     : "&cnone")
                     )
             );
@@ -191,8 +178,8 @@ public final class LPC extends JavaPlugin implements Listener {
             sender.sendMessage(
                     colorize(
                             "&7Suffix: &f"
-                                    + (debugMeta.getSuffix() != null
-                                    ? debugMeta.getSuffix()
+                                    + (meta.getSuffix() != null
+                                    ? meta.getSuffix()
                                     : "&cnone")
                     )
             );
@@ -200,9 +187,9 @@ public final class LPC extends JavaPlugin implements Listener {
             sender.sendMessage(
                     colorize(
                             "&7Username-color: &f"
-                                    + (debugMeta.getMetaValue(
+                                    + (meta.getMetaValue(
                                     "username-color") != null
-                                    ? debugMeta.getMetaValue(
+                                    ? meta.getMetaValue(
                                     "username-color")
                                     : "&cnone")
                     )
@@ -211,9 +198,9 @@ public final class LPC extends JavaPlugin implements Listener {
             sender.sendMessage(
                     colorize(
                             "&7Message-color: &f"
-                                    + (debugMeta.getMetaValue(
+                                    + (meta.getMetaValue(
                                     "message-color") != null
-                                    ? debugMeta.getMetaValue(
+                                    ? meta.getMetaValue(
                                     "message-color")
                                     : "&cnone")
                     )
@@ -282,19 +269,24 @@ public final class LPC extends JavaPlugin implements Listener {
             priority = EventPriority.HIGHEST,
             ignoreCancelled = true
     )
-    public void onChat(final AsyncPlayerChatEvent event) {
+    public void onChat(
+            final AsyncPlayerChatEvent event) {
 
-        final Player player = event.getPlayer();
+        final Player player =
+                event.getPlayer();
 
         final String processedMessage =
-                processMessage(player, event.getMessage());
+                processMessage(
+                        player,
+                        event.getMessage()
+                );
 
         final String format =
                 buildFormat(player);
 
         /*
-         * Cancel the normal Spigot chat event and send
-         * our own BungeeCord component message.
+         * Cancel the original chat event.
+         * We will send our own BungeeCord components.
          */
         event.setCancelled(true);
 
@@ -308,7 +300,8 @@ public final class LPC extends JavaPlugin implements Listener {
         for (final Player recipient :
                 event.getRecipients()) {
 
-            recipient.spigot().sendMessage(components);
+            recipient.spigot()
+                    .sendMessage(components);
         }
     }
 
@@ -331,18 +324,19 @@ public final class LPC extends JavaPlugin implements Listener {
 
         boolean markerFound = false;
 
-        for (final BaseComponent component : parsed) {
+        for (final BaseComponent component :
+                parsed) {
 
             if (!(component instanceof TextComponent)) {
                 result.add(component);
                 continue;
             }
 
-            final TextComponent textComponent =
+            final TextComponent original =
                     (TextComponent) component;
 
             final String text =
-                    textComponent.getText();
+                    original.getText();
 
             if (text == null
                     || !text.contains(NAME_MARKER)) {
@@ -362,18 +356,18 @@ public final class LPC extends JavaPlugin implements Listener {
                  i++) {
 
                 /*
-                 * Normal text before/after the player's name.
-                 *
                  * IMPORTANT:
-                 * We clone the original TextComponent instead
-                 * of using copyFormatting(), because the old
-                 * BungeeCord API used by Minecraft 1.8.8 does
-                 * not contain copyFormatting().
+                 * Do NOT use copyFormatting().
+                 *
+                 * The BungeeCord API available with
+                 * Spigot 1.8.8 does not provide it.
+                 *
+                 * Copy the entire TextComponent instead.
                  */
                 if (!pieces[i].isEmpty()) {
 
                     TextComponent part =
-                            new TextComponent(textComponent);
+                            new TextComponent(original);
 
                     part.setText(pieces[i]);
 
@@ -381,14 +375,17 @@ public final class LPC extends JavaPlugin implements Listener {
                 }
 
                 /*
-                 * Actual player name component.
+                 * Replace NAME_MARKER with the real
+                 * player's name.
                  */
                 if (i < pieces.length - 1) {
 
                     TextComponent name =
-                            new TextComponent(textComponent);
+                            new TextComponent(original);
 
-                    name.setText(player.getName());
+                    name.setText(
+                            player.getName()
+                    );
 
                     /*
                      * Hover information.
@@ -409,7 +406,8 @@ public final class LPC extends JavaPlugin implements Listener {
                     );
 
                     /*
-                     * Click -> opens /msg player
+                     * Click on name:
+                     * /msg PlayerName
                      */
                     name.setClickEvent(
                             new ClickEvent(
@@ -439,94 +437,113 @@ public final class LPC extends JavaPlugin implements Listener {
         );
     }
 
-    private String getRank(final Player player) {
+    private String getRank(
+            final Player player) {
 
-        final CachedMetaData metaData =
-                luckPerms
-                        .getPlayerAdapter(Player.class)
-                        .getMetaData(player);
-
-        return metaData.getPrimaryGroup() != null
-                ? metaData.getPrimaryGroup()
-                : "default";
-    }
-
-    String buildFormat(final Player player) {
-
-        final CachedMetaData metaData =
+        final CachedMetaData meta =
                 luckPerms
                         .getPlayerAdapter(Player.class)
                         .getMetaData(player);
 
         final String group =
-                metaData.getPrimaryGroup();
+                meta.getPrimaryGroup();
 
-        String format =
-                getConfig().getString(
-                        getConfig().getString(
-                                "group-formats." + group
-                        ) != null
-                                ? "group-formats." + group
-                                : "chat-format"
-                );
+        return group != null
+                ? group
+                : "default";
+    }
+
+    String buildFormat(
+            final Player player) {
+
+        final CachedMetaData meta =
+                luckPerms
+                        .getPlayerAdapter(Player.class)
+                        .getMetaData(player);
+
+        final String group =
+                meta.getPrimaryGroup();
+
+        String format;
+
+        if (getConfig().getString(
+                "group-formats." + group
+        ) != null) {
+
+            format =
+                    getConfig().getString(
+                            "group-formats." + group
+                    );
+
+        } else {
+
+            format =
+                    getConfig().getString(
+                            "chat-format"
+                    );
+        }
 
         if (format == null) {
+
             format =
                     "{prefix}{name}&r: {message}";
         }
 
         final String prefix =
-                metaData.getPrefix();
+                meta.getPrefix();
 
         final String suffix =
-                metaData.getSuffix();
+                meta.getSuffix();
 
         final String usernameColor =
-                metaData.getMetaValue(
+                meta.getMetaValue(
                         "username-color"
                 );
 
         final String messageColor =
-                metaData.getMetaValue(
+                meta.getMetaValue(
                         "message-color"
                 );
 
         format = format
                 .replace(
                         "{prefix}",
-                        prefix != null ? prefix : ""
+                        prefix != null
+                                ? prefix
+                                : ""
                 )
                 .replace(
                         "{suffix}",
-                        suffix != null ? suffix : ""
+                        suffix != null
+                                ? suffix
+                                : ""
                 )
                 .replace(
                         "{prefixes}",
-                        metaData.getPrefixes()
-                                .keySet()
+                        meta.getPrefixes()
+                                .values()
                                 .stream()
-                                .map(key ->
-                                        metaData
-                                                .getPrefixes()
-                                                .get(key)
+                                .filter(value ->
+                                        value != null)
+                                .collect(
+                                        Collectors.joining()
                                 )
-                                .collect(Collectors.joining())
                 )
                 .replace(
                         "{suffixes}",
-                        metaData.getSuffixes()
-                                .keySet()
+                        meta.getSuffixes()
+                                .values()
                                 .stream()
-                                .map(key ->
-                                        metaData
-                                                .getSuffixes()
-                                                .get(key)
+                                .filter(value ->
+                                        value != null)
+                                .collect(
+                                        Collectors.joining()
                                 )
-                                .collect(Collectors.joining())
                 )
                 .replace(
                         "{world}",
-                        player.getWorld().getName()
+                        player.getWorld()
+                                .getName()
                 )
                 .replace(
                         "{name}",
@@ -557,7 +574,9 @@ public final class LPC extends JavaPlugin implements Listener {
          */
         if (getServer()
                 .getPluginManager()
-                .isPluginEnabled("PlaceholderAPI")) {
+                .isPluginEnabled(
+                        "PlaceholderAPI"
+                )) {
 
             format =
                     PlaceholderAPI.setPlaceholders(
@@ -575,23 +594,36 @@ public final class LPC extends JavaPlugin implements Listener {
             final Player player,
             final String message) {
 
-        if (player.hasPermission("lpc.colorcodes")
-                && player.hasPermission("lpc.rgbcodes")) {
+        final boolean colors =
+                player.hasPermission(
+                        "lpc.colorcodes"
+                );
+
+        final boolean rgb =
+                player.hasPermission(
+                        "lpc.rgbcodes"
+                );
+
+        if (colors && rgb) {
 
             return colorize(
-                    translateHexColorCodes(message)
+                    translateHexColorCodes(
+                            message
+                    )
             );
 
-        } else if (player.hasPermission("lpc.colorcodes")) {
+        } else if (colors) {
 
             return colorize(
                     stripHexCodes(message)
             );
 
-        } else if (player.hasPermission("lpc.rgbcodes")) {
+        } else if (rgb) {
 
             return stripColorCodes(
-                    translateHexColorCodes(message)
+                    translateHexColorCodes(
+                            message
+                    )
             );
 
         } else {
@@ -602,12 +634,14 @@ public final class LPC extends JavaPlugin implements Listener {
         }
     }
 
-    String colorize(final String message) {
+    String colorize(
+            final String message) {
 
-        return ChatColor.translateAlternateColorCodes(
-                '&',
-                message
-        );
+        return ChatColor
+                .translateAlternateColorCodes(
+                        '&',
+                        message
+                );
     }
 
     String translateHexColorCodes(
@@ -621,7 +655,7 @@ public final class LPC extends JavaPlugin implements Listener {
 
         final StringBuffer buffer =
                 new StringBuffer(
-                        message.length() + 4 * 8
+                        message.length() + 32
                 );
 
         while (matcher.find()) {
@@ -656,7 +690,9 @@ public final class LPC extends JavaPlugin implements Listener {
                 BUKKIT_HEX_PATTERN.matcher(result);
 
         final StringBuffer bukkitBuffer =
-                new StringBuffer(result.length());
+                new StringBuffer(
+                        result.length()
+                );
 
         while (matcher.find()) {
 
