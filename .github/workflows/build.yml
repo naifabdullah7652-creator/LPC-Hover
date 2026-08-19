@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build LPC-Hover 3.7.2
     runs-on: ubuntu-latest
 
     steps:
@@ -21,11 +22,28 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Build Spigot 1.8.8 plugin
-        run: mvn clean package
+      - name: Show project files
+        run: |
+          echo "=== POM FILES ==="
+          find . -name pom.xml -print
 
-      - name: Upload JAR
+          echo "=== BUNGEE CHAT REFERENCES ==="
+          grep -Rni "bungeecord-chat" . \
+            --exclude-dir=.git \
+            --exclude="*.class" \
+            --exclude="*.jar" || true
+
+      - name: Build LPC-Hover
+        run: mvn -f pom.xml clean package -U
+
+      - name: Check JAR
+        run: |
+          echo "=== BUILD OUTPUT ==="
+          ls -lah target/
+          test -f target/LPC-Hover-3.7.2.jar
+
+      - name: Upload LPC-Hover JAR
         uses: actions/upload-artifact@v4
         with:
           name: LPC-Hover-3.7.2
-          path: target/*.jar
+          path: target/LPC-Hover-3.7.2.jar
