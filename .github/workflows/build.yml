@@ -1,4 +1,4 @@
-name: Build LPC-Hover 3.7.2
+name: Build Spigot 1.8.8 plugin
 
 on:
   workflow_dispatch:
@@ -8,79 +8,24 @@ on:
 
 jobs:
   build:
-    name: Build Spigot 1.8.8 plugin
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Set up Java 8
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '8'
           cache: maven
 
-      - name: Verify source files
-        run: |
-          test -f pom.xml
-          test -f src/main/java/com/infiniteplugins/lpc/LPC.java
-          echo "Source files found."
+      - name: Build Spigot 1.8.8 plugin
+        run: mvn clean package
 
-      - name: Download original LPC config
-        run: |
-          mkdir -p src/main/resources
-          curl -fsSL \
-            https://raw.githubusercontent.com/ThePM2/LPC/main/src/main/resources/config.yml \
-            -o src/main/resources/config.yml
-
-      - name: Create 1.8.8-compatible plugin.yml
-        run: |
-          cat > src/main/resources/plugin.yml <<'EOF'
-          name: LPC-Hover
-          version: 3.7.2
-          main: com.infiniteplugins.lpc.LPC
-          author: PM2 / LPC-Hover
-          description: LPC 3.7.2 chat formatter with player-name hover/click support for Spigot 1.8.8
-          depend:
-            - LuckPerms
-          softdepend:
-            - PlaceholderAPI
-          commands:
-            lpc:
-              description: LPC commands.
-              usage: "/lpc <reload|clear|debug>"
-          permissions:
-            lpc.reload:
-              description: Allows use of /lpc reload
-              default: op
-            lpc.clearchat:
-              description: Allows use of /lpc clear
-              default: op
-            lpc.debug:
-              description: Allows use of /lpc debug
-              default: op
-            lpc.colorcodes:
-              description: Allows color codes in chat messages
-              default: false
-            lpc.rgbcodes:
-              description: Allows RGB/hex color codes in chat messages
-              default: false
-          EOF
-
-      - name: Build
-        run: mvn -B clean package
-
-      - name: Verify JAR
-        run: |
-          test -f target/LPC-Hover-3.7.2.jar
-          file target/LPC-Hover-3.7.2.jar
-          ls -lh target/LPC-Hover-3.7.2.jar
-
-      - name: Upload JAR artifact
+      - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: LPC-Hover-3.7.2
-          path: target/LPC-Hover-3.7.2.jar
-          if-no-files-found: error
+          path: target/*.jar
