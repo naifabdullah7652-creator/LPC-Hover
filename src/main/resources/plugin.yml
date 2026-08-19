@@ -1,0 +1,43 @@
+name: LPC
+version: 3.7.2
+main: com.infiniteplugins.lpc.LPC
+author: InfinitePlugins
+description: LPC chat formatting with player hover and click support
+website: https://github.com/naifabdullah7652-creator/LPC-Files
+
+depend:
+  - LuckPerms
+
+softdepend:
+  - PlaceholderAPI
+
+commands:
+  lpc:
+    description: LPC administration command
+    usage: /lpc <reload|clear|debug>
+    permission: lpc.admin
+
+permissions:
+  lpc.admin:
+    description: Access to LPC administration commands
+    default: op
+
+  lpc.reload:
+    description: Reload LPC configuration
+    default: op
+
+  lpc.clearchat:
+    description: Clear the chat
+    default: op
+
+  lpc.debug:
+    description: View LPC debug information
+    default: op
+
+  lpc.colorcodes:
+    description: Allow color codes in chat
+    default: op
+
+  lpc.rgbcodes:
+    description: Allow RGB/hex colors in chat
+    default: op
