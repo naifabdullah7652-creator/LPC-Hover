@@ -9,6 +9,7 @@ import net.luckperms.api.node.types.InheritanceNode;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -29,16 +30,14 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
         try {
             luckPerms = LuckPermsProvider.get();
         } catch (Exception e) {
-            getLogger().severe("Could not hook into LuckPerms!");
+            getLogger().severe("LuckPerms not found!");
             e.printStackTrace();
-            getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
         getServer().getPluginManager().registerEvents(this, this);
 
-        getLogger().info("LPC-Hover-Nova enabled!");
-        getLogger().info("LuckPerms hooked successfully!");
+        getLogger().info("LPC-Hover enabled!");
     }
 
     @EventHandler
@@ -46,58 +45,60 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
 
         Player player = event.getPlayer();
 
-        String name = player.getName();
         String message = event.getMessage();
+        String name = player.getName();
 
         String rank = "Player";
         String expired = "LifeTime";
 
         /*
-         * Get LuckPerms user
+         * LuckPerms
          */
-        User user = luckPerms
-                .getUserManager()
-                .getUser(player.getUniqueId());
+        if (luckPerms != null) {
 
-        if (user != null) {
+            User user = luckPerms
+                    .getUserManager()
+                    .getUser(player.getUniqueId());
 
-            rank = user.getPrimaryGroup();
+            if (user != null) {
 
-            /*
-             * Find temporary/permanent
-             * inheritance node.
-             */
-            for (Node node : user.getNodes()) {
+                rank = user.getPrimaryGroup();
 
-                if (!(node instanceof InheritanceNode)) {
-                    continue;
-                }
+                /*
+                 * Check rank expiration
+                 */
+                for (Node node : user.getNodes()) {
 
-                InheritanceNode inheritance =
-                        (InheritanceNode) node;
-
-                if (!inheritance.getGroupName()
-                        .equalsIgnoreCase(rank)) {
-                    continue;
-                }
-
-                if (!inheritance.hasExpiry()) {
-
-                    expired = "LifeTime";
-
-                } else {
-
-                    Duration duration =
-                            inheritance.getExpiryDuration();
-
-                    if (duration != null) {
-                        expired = formatDuration(duration);
-                    } else {
-                        expired = "Expired";
+                    if (!(node instanceof InheritanceNode)) {
+                        continue;
                     }
-                }
 
-                break;
+                    InheritanceNode inheritance =
+                            (InheritanceNode) node;
+
+                    if (!inheritance.getGroupName()
+                            .equalsIgnoreCase(rank)) {
+                        continue;
+                    }
+
+                    if (inheritance.hasExpiry()) {
+
+                        Duration duration =
+                                inheritance.getExpiryDuration();
+
+                        if (duration != null) {
+                            expired = formatDuration(duration);
+                        } else {
+                            expired = "Expired";
+                        }
+
+                    } else {
+
+                        expired = "LifeTime";
+                    }
+
+                    break;
+                }
             }
         }
 
@@ -107,94 +108,49 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
         String accountAge =
                 getAccountAge(player.getFirstPlayed());
 
-        /*
-         * Player name
-         */
-        TextComponent nameComponent =
-                new TextComponent(
-                        ChatColor.WHITE + name
-                );
-
-        /*
-         * Build Hover line by line
-         */
-        TextComponent hover =
-                new TextComponent();
-
-        TextComponent line1 =
-                new TextComponent(
-                        ChatColor.YELLOW + "Player: "
-                                + ChatColor.WHITE
-                                + name
-                );
-
-        TextComponent line2 =
-                new TextComponent(
-                        ChatColor.YELLOW + "\nRank: "
-                                + ChatColor.WHITE
-                                + rank
-                );
-
-        TextComponent line3 =
-                new TextComponent(
-                        ChatColor.YELLOW + "\nExpired: "
-                                + ChatColor.WHITE
-                                + expired
-                );
-
-        TextComponent line4 =
-                new TextComponent(
-                        ChatColor.YELLOW + "\nAccount Age: "
-                                + ChatColor.WHITE
-                                + accountAge
-                );
-
-        hover.addExtra(line1);
-        hover.addExtra(line2);
-        hover.addExtra(line3);
-        hover.addExtra(line4);
+        TextComponent component = new TextComponent(
+                ChatColor.WHITE + name
+        );
 
         /*
          * Hover
          */
-        nameComponent.setHoverEvent(
-                new HoverEvent(
-                        HoverEvent.Action.SHOW_TEXT,
-                        new TextComponent[]{
-                                hover
-                        }
-                )
-        );
+        component.setHoverEvent(new HoverEvent(
+                HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder(
+                        ChatColor.YELLOW + "Player: "
+                                + ChatColor.WHITE + name
+                                + "\n"
+                                + ChatColor.YELLOW + "Rank: "
+                                + ChatColor.WHITE + rank
+                                + "\n"
+                                + ChatColor.YELLOW + "Expired: "
+                                + ChatColor.WHITE + expired
+                                + "\n"
+                                + ChatColor.YELLOW + "Account Age: "
+                                + ChatColor.WHITE + accountAge
+                ).create()
+        ));
 
         /*
-         * Click -> /msg
+         * Click
          */
-        nameComponent.setClickEvent(
-                new ClickEvent(
-                        ClickEvent.Action.SUGGEST_COMMAND,
-                        "/msg " + name + " "
-                )
-        );
+        component.setClickEvent(new ClickEvent(
+                ClickEvent.Action.SUGGEST_COMMAND,
+                "/msg " + name + " "
+        ));
 
-        /*
-         * Final message
-         */
         TextComponent finalMessage =
                 new TextComponent();
 
-        finalMessage.addExtra(nameComponent);
+        finalMessage.addExtra(component);
 
         finalMessage.addExtra(
                 new TextComponent(
-                        ChatColor.WHITE
-                                + ": "
-                                + message
+                        ChatColor.WHITE + ": " + message
                 )
         );
 
-        /*
-         * Send to players
-         */
         for (Player online :
                 getServer().getOnlinePlayers()) {
 
@@ -207,29 +163,23 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
     }
 
     /*
-     * Format rank expiration
+     * Rank duration
      */
     private String formatDuration(Duration duration) {
 
-        long seconds =
-                duration.getSeconds();
+        long seconds = duration.getSeconds();
 
         if (seconds <= 0) {
             return "Expired";
         }
 
-        long days =
-                seconds / 86400;
-
+        long days = seconds / 86400;
         seconds %= 86400;
 
-        long hours =
-                seconds / 3600;
-
+        long hours = seconds / 3600;
         seconds %= 3600;
 
-        long minutes =
-                seconds / 60;
+        long minutes = seconds / 60;
 
         StringBuilder result =
                 new StringBuilder();
@@ -258,7 +208,7 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        if (minutes > 0 && days == 0) {
+        if (minutes > 0) {
 
             if (result.length() > 0) {
                 result.append(" ");
@@ -296,21 +246,8 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
             return "Unknown";
         }
 
-        long totalSeconds =
-                difference / 1000;
-
         long days =
-                totalSeconds / 86400;
-
-        totalSeconds %= 86400;
-
-        long hours =
-                totalSeconds / 3600;
-
-        totalSeconds %= 3600;
-
-        long minutes =
-                totalSeconds / 60;
+                difference / 86400000L;
 
         long years =
                 days / 365;
@@ -321,6 +258,9 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
                 days / 30;
 
         days %= 30;
+
+        long hours =
+                (difference / 3600000L) % 24;
 
         StringBuilder result =
                 new StringBuilder();
@@ -363,31 +303,18 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        if (result.length() == 0) {
+        if (result.length() == 0 && hours > 0) {
 
-            if (hours > 0) {
+            result.append(hours)
+                    .append(" hour");
 
-                result.append(hours)
-                        .append(" hour");
-
-                if (hours != 1) {
-                    result.append("s");
-                }
-
-            } else if (minutes > 0) {
-
-                result.append(minutes)
-                        .append(" minute");
-
-                if (minutes != 1) {
-                    result.append("s");
-
-                }
-
-            } else {
-
-                return "Less than 1 minute";
+            if (hours != 1) {
+                result.append("s");
             }
+        }
+
+        if (result.length() == 0) {
+            return "Less than 1 hour";
         }
 
         return result.toString();
