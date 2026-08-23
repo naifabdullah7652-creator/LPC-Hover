@@ -1,4 +1,3 @@
-```java
 package com.infiniteplugins.lpc;
 
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -385,9 +384,6 @@ public final class LPC extends JavaPlugin implements Listener {
                             player.getName()
                     );
 
-                    /*
-                     * Hover information
-                     */
                     name.setHoverEvent(
                             new HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
@@ -409,10 +405,6 @@ public final class LPC extends JavaPlugin implements Listener {
                             )
                     );
 
-                    /*
-                     * Click:
-                     * /msg PlayerName
-                     */
                     name.setClickEvent(
                             new ClickEvent(
                                     ClickEvent.Action.SUGGEST_COMMAND,
@@ -429,9 +421,6 @@ public final class LPC extends JavaPlugin implements Listener {
             }
         }
 
-        /*
-         * Safety fallback
-         */
         if (!markerFound) {
             return parsed;
         }
@@ -457,15 +446,6 @@ public final class LPC extends JavaPlugin implements Listener {
                 : "default";
     }
 
-    /*
-     * Get the player's rank expiration.
-     *
-     * Permanent:
-     * LifeTime
-     *
-     * Temporary:
-     * 20 days 5 hours
-     */
     private String getRankExpiration(
             final Player player) {
 
@@ -481,9 +461,6 @@ public final class LPC extends JavaPlugin implements Listener {
         final String primaryGroup =
                 getRank(player);
 
-        /*
-         * Search direct inheritance nodes.
-         */
         for (final Node node :
                 user.getNodes()) {
 
@@ -500,16 +477,10 @@ public final class LPC extends JavaPlugin implements Listener {
                 continue;
             }
 
-            /*
-             * Permanent rank
-             */
             if (!node.hasExpiry()) {
                 return "LifeTime";
             }
 
-            /*
-             * Temporary rank
-             */
             final Duration duration =
                     node.getExpiryDuration();
 
@@ -526,15 +497,9 @@ public final class LPC extends JavaPlugin implements Listener {
             return formatDuration(duration);
         }
 
-        /*
-         * No temporary node found.
-         */
         return "LifeTime";
     }
 
-    /*
-     * Format remaining rank duration.
-     */
     private String formatDuration(
             final Duration duration) {
 
@@ -644,12 +609,6 @@ public final class LPC extends JavaPlugin implements Listener {
         return result.toString();
     }
 
-    /*
-     * Account Age
-     *
-     * Based on player's first join
-     * timestamp stored by Bukkit.
-     */
     private String getAccountAge(
             final Player player) {
 
@@ -727,10 +686,6 @@ public final class LPC extends JavaPlugin implements Listener {
                     );
         }
 
-        /*
-         * Show hours only for accounts
-         * younger than one day.
-         */
         if (hours > 0
                 && result.length() == 0) {
 
@@ -865,9 +820,6 @@ public final class LPC extends JavaPlugin implements Listener {
         format =
                 translateHexColorCodes(format);
 
-        /*
-         * PlaceholderAPI is optional.
-         */
         if (getServer()
                 .getPluginManager()
                 .isPluginEnabled(
@@ -1034,4 +986,3 @@ public final class LPC extends JavaPlugin implements Listener {
         return result;
     }
 }
-```
