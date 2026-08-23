@@ -14,8 +14,7 @@
 
     <name>LPC-Hover-Nova</name>
     <description>
-        LPC Hover for Minecraft 1.8.8 with LuckPerms, PlaceholderAPI,
-        Rank expiration and Account Age
+        LPC Hover for Minecraft 1.8.8 with LuckPerms and PlaceholderAPI
     </description>
 
     <properties>
@@ -27,12 +26,6 @@
     </properties>
 
     <repositories>
-
-        <!-- Spigot -->
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
 
         <!-- LuckPerms -->
         <repository>
@@ -46,10 +39,10 @@
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
 
-        <!-- Sonatype -->
+        <!-- Maven Central -->
         <repository>
-            <id>sonatype-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
 
     </repositories>
@@ -58,7 +51,8 @@
 
         <!--
             Spigot 1.8.8
-            The GitHub Actions workflow downloads this file to:
+            Required file:
+
             lib/Spigot-1.8.8.jar
         -->
         <dependency>
@@ -69,11 +63,18 @@
             <systemPath>${project.basedir}/lib/Spigot-1.8.8.jar</systemPath>
         </dependency>
 
-        <!-- LuckPerms API 5.3.86 -->
+        <!--
+            LuckPerms API 5.3
+
+            IMPORTANT:
+            This is the API version.
+            The server can still use:
+            LuckPerms-Bukkit-5.3.86.jar
+        -->
         <dependency>
             <groupId>net.luckperms</groupId>
             <artifactId>api</artifactId>
-            <version>5.3.86</version>
+            <version>5.3</version>
             <scope>provided</scope>
         </dependency>
 
@@ -93,7 +94,7 @@
 
         <plugins>
 
-            <!-- Java 8 Compiler -->
+            <!-- Java 8 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -126,7 +127,9 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultImplementationEntries>
+                                true
+                            </addDefaultImplementationEntries>
                         </manifest>
                     </archive>
                 </configuration>
