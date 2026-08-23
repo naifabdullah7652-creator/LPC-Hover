@@ -47,17 +47,19 @@ public final class LPC extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
 
-        this.luckPerms =
-                getServer().getServicesManager()
+        luckPerms =
+                getServer()
+                        .getServicesManager()
                         .load(LuckPerms.class);
 
-        if (this.luckPerms == null) {
+        if (luckPerms == null) {
 
             getLogger().severe(
-                    "LuckPerms not found! LPC requires LuckPerms to function."
+                    "LuckPerms not found! LPC requires LuckPerms."
             );
 
-            getServer().getPluginManager()
+            getServer()
+                    .getPluginManager()
                     .disablePlugin(this);
 
             return;
@@ -65,45 +67,21 @@ public final class LPC extends JavaPlugin implements Listener {
 
         saveDefaultConfig();
 
-        getServer().getPluginManager()
+        getServer()
+                .getPluginManager()
                 .registerEvents(this, this);
 
-        final String[] chatPlugins = {
-                "EssentialsChat",
-                "VentureChat",
-                "HeroChat",
-                "DeluxeChat",
-                "ChatManager",
-                "ChatEx",
-                "UltraChat",
-                "TownyChat"
-        };
-
-        for (final String pluginName : chatPlugins) {
-
-            if (getServer().getPluginManager()
-                    .isPluginEnabled(pluginName)) {
-
-                getLogger().warning(
-                        "Detected " + pluginName
-                                + " which may also format chat. "
-                                + "Disable its chat formatting to avoid "
-                                + "duplicate chat messages."
-                );
-            }
-        }
-
         getLogger().info(
-                "LPC-Hover-Nova 1.8.8 enabled."
+                "LPC-Hover-Nova enabled for Minecraft 1.8.8."
         );
     }
 
     @Override
     public boolean onCommand(
-            final CommandSender sender,
-            final Command command,
-            final String label,
-            final String[] args) {
+            CommandSender sender,
+            Command command,
+            String label,
+            String[] args) {
 
         if (args.length == 1
                 && "reload".equalsIgnoreCase(args[0])
@@ -122,7 +100,7 @@ public final class LPC extends JavaPlugin implements Listener {
                 && "clear".equalsIgnoreCase(args[0])
                 && sender.hasPermission("lpc.clearchat")) {
 
-            for (final Player player :
+            for (Player player :
                     getServer().getOnlinePlayers()) {
 
                 for (int i = 0; i < 100; i++) {
@@ -130,10 +108,10 @@ public final class LPC extends JavaPlugin implements Listener {
                 }
             }
 
-            final String clearMessage =
+            String clearMessage =
                     getConfig().getString(
                             "clear-chat-message",
-                            "&7Chat has been cleared by a staff member."
+                            "&7Chat has been cleared."
                     );
 
             getServer().broadcastMessage(
@@ -147,7 +125,7 @@ public final class LPC extends JavaPlugin implements Listener {
                 && "debug".equalsIgnoreCase(args[0])
                 && sender.hasPermission("lpc.debug")) {
 
-            final Player target =
+            Player target =
                     getServer().getPlayer(args[1]);
 
             if (target == null) {
@@ -159,7 +137,7 @@ public final class LPC extends JavaPlugin implements Listener {
                 return true;
             }
 
-            final CachedMetaData meta =
+            CachedMetaData meta =
                     luckPerms
                             .getPlayerAdapter(Player.class)
                             .getMetaData(target);
@@ -175,24 +153,6 @@ public final class LPC extends JavaPlugin implements Listener {
                     colorize(
                             "&7Primary Group: &f"
                                     + meta.getPrimaryGroup()
-                    )
-            );
-
-            sender.sendMessage(
-                    colorize(
-                            "&7Prefix: &f"
-                                    + (meta.getPrefix() != null
-                                    ? meta.getPrefix()
-                                    : "&cnone")
-                    )
-            );
-
-            sender.sendMessage(
-                    colorize(
-                            "&7Suffix: &f"
-                                    + (meta.getSuffix() != null
-                                    ? meta.getSuffix()
-                                    : "&cnone")
                     )
             );
 
@@ -218,17 +178,17 @@ public final class LPC extends JavaPlugin implements Listener {
 
     @Override
     public List<String> onTabComplete(
-            final CommandSender sender,
-            final Command command,
-            final String alias,
-            final String[] args) {
+            CommandSender sender,
+            Command command,
+            String alias,
+            String[] args) {
 
-        final List<String> completions =
-                new ArrayList<>();
+        List<String> completions =
+                new ArrayList<String>();
 
         if (args.length == 1) {
 
-            final String input =
+            String input =
                     args[0].toLowerCase();
 
             if (sender.hasPermission("lpc.reload")
@@ -248,8 +208,9 @@ public final class LPC extends JavaPlugin implements Listener {
 
                 completions.add("debug");
             }
+        }
 
-        } else if (args.length == 2
+        else if (args.length == 2
                 && "debug".equalsIgnoreCase(args[0])
                 && sender.hasPermission("lpc.debug")) {
 
@@ -274,30 +235,30 @@ public final class LPC extends JavaPlugin implements Listener {
             ignoreCancelled = true
     )
     public void onChat(
-            final AsyncPlayerChatEvent event) {
+            AsyncPlayerChatEvent event) {
 
-        final Player player =
+        Player player =
                 event.getPlayer();
 
-        final String processedMessage =
+        String message =
                 processMessage(
                         player,
                         event.getMessage()
                 );
 
-        final String format =
+        String format =
                 buildFormat(player);
 
         event.setCancelled(true);
 
-        final BaseComponent[] components =
+        BaseComponent[] components =
                 buildChatComponents(
                         player,
                         format,
-                        processedMessage
+                        message
                 );
 
-        for (final Player recipient :
+        for (Player recipient :
                 event.getRecipients()) {
 
             recipient.spigot()
@@ -306,49 +267,46 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     private BaseComponent[] buildChatComponents(
-            final Player player,
-            final String format,
-            final String processedMessage) {
+            Player player,
+            String format,
+            String processedMessage) {
 
-        final String full =
+        String full =
                 format.replace(
                         "{message}",
                         processedMessage
                 );
 
-        final BaseComponent[] parsed =
+        BaseComponent[] parsed =
                 TextComponent.fromLegacyText(full);
 
-        final List<BaseComponent> result =
-                new ArrayList<>();
+        List<BaseComponent> result =
+                new ArrayList<BaseComponent>();
 
         boolean markerFound = false;
 
-        for (final BaseComponent component :
-                parsed) {
+        for (BaseComponent component : parsed) {
 
             if (!(component instanceof TextComponent)) {
 
                 result.add(component);
-
                 continue;
             }
 
-            final TextComponent original =
+            TextComponent original =
                     (TextComponent) component;
 
-            final String text =
+            String text =
                     original.getText();
 
             if (text == null
                     || !text.contains(NAME_MARKER)) {
 
                 result.add(component);
-
                 continue;
             }
 
-            final String[] pieces =
+            String[] pieces =
                     text.split(
                             Pattern.quote(NAME_MARKER),
                             -1
@@ -425,14 +383,14 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     private String getRank(
-            final Player player) {
+            Player player) {
 
-        final CachedMetaData meta =
+        CachedMetaData meta =
                 luckPerms
                         .getPlayerAdapter(Player.class)
                         .getMetaData(player);
 
-        final String group =
+        String group =
                 meta.getPrimaryGroup();
 
         return group != null
@@ -441,7 +399,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     private String getRankExpiration(
-            final Player player) {
+            Player player) {
 
         User user =
                 luckPerms
@@ -465,7 +423,8 @@ public final class LPC extends JavaPlugin implements Listener {
             InheritanceNode inheritance =
                     (InheritanceNode) node;
 
-            if (!inheritance.getGroupName()
+            if (!inheritance
+                    .getGroupName()
                     .equalsIgnoreCase(primaryGroup)) {
 
                 continue;
@@ -482,8 +441,8 @@ public final class LPC extends JavaPlugin implements Listener {
                 return "LifeTime";
             }
 
-            if (duration.isNegative()
-                    || duration.isZero()) {
+            if (duration.isZero()
+                    || duration.isNegative()) {
 
                 return "Expired";
             }
@@ -495,7 +454,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     private String formatDuration(
-            final Duration duration) {
+            Duration duration) {
 
         long seconds =
                 duration.getSeconds();
@@ -566,7 +525,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     private String getAccountAge(
-            final Player player) {
+            Player player) {
 
         long firstPlayed =
                 player.getFirstPlayed();
@@ -623,14 +582,14 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     String buildFormat(
-            final Player player) {
+            Player player) {
 
-        final CachedMetaData meta =
+        CachedMetaData meta =
                 luckPerms
                         .getPlayerAdapter(Player.class)
                         .getMetaData(player);
 
-        final String group =
+        String group =
                 meta.getPrimaryGroup();
 
         String format;
@@ -656,18 +615,18 @@ public final class LPC extends JavaPlugin implements Listener {
             format = "{prefix}{name}&r: {message}";
         }
 
-        final String prefix =
+        String prefix =
                 meta.getPrefix();
 
-        final String suffix =
+        String suffix =
                 meta.getSuffix();
 
-        final String usernameColor =
+        String usernameColor =
                 meta.getMetaValue(
                         "username-color"
                 );
 
-        final String messageColor =
+        String messageColor =
                 meta.getMetaValue(
                         "message-color"
                 );
@@ -755,8 +714,8 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     String processMessage(
-            final Player player,
-            final String message) {
+            Player player,
+            String message) {
 
         boolean colors =
                 player.hasPermission(
@@ -799,7 +758,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     String colorize(
-            final String message) {
+            String message) {
 
         return ChatColor
                 .translateAlternateColorCodes(
@@ -809,7 +768,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     String translateHexColorCodes(
-            final String message) {
+            String message) {
 
         final char colorChar =
                 ChatColor.COLOR_CHAR;
@@ -817,7 +776,7 @@ public final class LPC extends JavaPlugin implements Listener {
         Matcher matcher =
                 HEX_PATTERN.matcher(message);
 
-        final StringBuffer buffer =
+        StringBuffer buffer =
                 new StringBuffer(
                         message.length() + 32
                 );
@@ -876,7 +835,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     String stripColorCodes(
-            final String message) {
+            String message) {
 
         return message.replaceAll(
                 "&[0-9a-fA-Fk-oK-OrR]",
@@ -885,7 +844,7 @@ public final class LPC extends JavaPlugin implements Listener {
     }
 
     String stripHexCodes(
-            final String message) {
+            String message) {
 
         String result =
                 message.replaceAll(
