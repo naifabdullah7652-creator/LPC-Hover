@@ -10,13 +10,12 @@
     <groupId>com.infiniteplugins</groupId>
     <artifactId>lpc-hover</artifactId>
     <version>3.7.2</version>
-
     <packaging>jar</packaging>
 
-    <name>LPC-Hover</name>
+    <name>LPC-Hover-Nova</name>
 
     <description>
-        LPC 3.7.2 with player hover, click, rank expiration and account age support
+        LPC 3.7.2 for Minecraft 1.8.8 with LuckPerms hover information
     </description>
 
     <properties>
@@ -27,22 +26,9 @@
 
     <repositories>
 
-        <!-- Spigot -->
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-
-        <!-- LuckPerms -->
         <repository>
             <id>luckperms</id>
             <url>https://repo.lucko.me/</url>
-        </repository>
-
-        <!-- Sonatype -->
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
 
     </repositories>
@@ -52,17 +38,12 @@
         <!-- Spigot 1.8.8 -->
         <dependency>
             <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.8.8-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- BungeeCord Chat API -->
-        <dependency>
-            <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-chat</artifactId>
-            <version>1.8-SNAPSHOT</version>
-            <scope>provided</scope>
+            <artifactId>spigot-1.8.8</artifactId>
+            <version>1.8.8</version>
+            <scope>system</scope>
+            <systemPath>
+                ${project.basedir}/lib/Spigot-1.8.8.jar
+            </systemPath>
         </dependency>
 
         <!-- LuckPerms API -->
