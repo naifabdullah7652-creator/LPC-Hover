@@ -2,8 +2,7 @@ name: LPC
 version: 3.7.2
 main: com.infiniteplugins.lpc.LPC
 author: InfinitePlugins
-description: LPC chat formatting with player hover, click, rank expiration and account age support
-website: https://github.com/naifabdullah7652-creator/LPC-Files
+description: LPC Hover for Minecraft 1.8.8
 
 depend:
   - LuckPerms
@@ -27,7 +26,7 @@ permissions:
     default: op
 
   lpc.clearchat:
-    description: Clear the chat
+    description: Clear chat
     default: op
 
   lpc.debug:
