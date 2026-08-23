@@ -1,13 +1,19 @@
+```java
 package com.infiniteplugins.lpc;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedMetaData;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
+import net.luckperms.api.node.types.InheritanceNode;
+
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -18,6 +24,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -41,20 +48,25 @@ public final class LPC extends JavaPlugin implements Listener {
     public void onEnable() {
 
         this.luckPerms =
-                getServer().getServicesManager().load(LuckPerms.class);
+                getServer().getServicesManager()
+                        .load(LuckPerms.class);
 
         if (this.luckPerms == null) {
+
             getLogger().severe(
                     "LuckPerms not found! LPC requires LuckPerms to function."
             );
 
-            getServer().getPluginManager().disablePlugin(this);
+            getServer().getPluginManager()
+                    .disablePlugin(this);
+
             return;
         }
 
         saveDefaultConfig();
 
-        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager()
+                .registerEvents(this, this);
 
         final String[] chatPlugins = {
                 "EssentialsChat",
@@ -284,10 +296,6 @@ public final class LPC extends JavaPlugin implements Listener {
         final String format =
                 buildFormat(player);
 
-        /*
-         * Cancel the original chat event.
-         * We will send our own BungeeCord components.
-         */
         event.setCancelled(true);
 
         final BaseComponent[] components =
@@ -328,7 +336,9 @@ public final class LPC extends JavaPlugin implements Listener {
                 parsed) {
 
             if (!(component instanceof TextComponent)) {
+
                 result.add(component);
+
                 continue;
             }
 
@@ -342,6 +352,7 @@ public final class LPC extends JavaPlugin implements Listener {
                     || !text.contains(NAME_MARKER)) {
 
                 result.add(component);
+
                 continue;
             }
 
@@ -355,15 +366,6 @@ public final class LPC extends JavaPlugin implements Listener {
                  i < pieces.length;
                  i++) {
 
-                /*
-                 * IMPORTANT:
-                 * Do NOT use copyFormatting().
-                 *
-                 * The BungeeCord API available with
-                 * Spigot 1.8.8 does not provide it.
-                 *
-                 * Copy the entire TextComponent instead.
-                 */
                 if (!pieces[i].isEmpty()) {
 
                     TextComponent part =
@@ -374,10 +376,6 @@ public final class LPC extends JavaPlugin implements Listener {
                     result.add(part);
                 }
 
-                /*
-                 * Replace NAME_MARKER with the real
-                 * player's name.
-                 */
                 if (i < pieces.length - 1) {
 
                     TextComponent name =
@@ -388,7 +386,7 @@ public final class LPC extends JavaPlugin implements Listener {
                     );
 
                     /*
-                     * Hover information.
+                     * Hover information
                      */
                     name.setHoverEvent(
                             new HoverEvent(
@@ -400,13 +398,19 @@ public final class LPC extends JavaPlugin implements Listener {
                                                             + "\n"
                                                             + "&6Rank: &f"
                                                             + getRank(player)
+                                                            + "\n"
+                                                            + "&6Expired: &f"
+                                                            + getRankExpiration(player)
+                                                            + "\n"
+                                                            + "&6Account Age: &f"
+                                                            + getAccountAge(player)
                                             )
                                     ).create()
                             )
                     );
 
                     /*
-                     * Click on name:
+                     * Click:
                      * /msg PlayerName
                      */
                     name.setClickEvent(
@@ -426,7 +430,7 @@ public final class LPC extends JavaPlugin implements Listener {
         }
 
         /*
-         * Safety fallback.
+         * Safety fallback
          */
         if (!markerFound) {
             return parsed;
@@ -451,6 +455,298 @@ public final class LPC extends JavaPlugin implements Listener {
         return group != null
                 ? group
                 : "default";
+    }
+
+    /*
+     * Get the player's rank expiration.
+     *
+     * Permanent:
+     * LifeTime
+     *
+     * Temporary:
+     * 20 days 5 hours
+     */
+    private String getRankExpiration(
+            final Player player) {
+
+        final User user =
+                luckPerms
+                        .getUserManager()
+                        .getUser(player.getUniqueId());
+
+        if (user == null) {
+            return "LifeTime";
+        }
+
+        final String primaryGroup =
+                getRank(player);
+
+        /*
+         * Search direct inheritance nodes.
+         */
+        for (final Node node :
+                user.getNodes()) {
+
+            if (!(node instanceof InheritanceNode)) {
+                continue;
+            }
+
+            final InheritanceNode inheritance =
+                    (InheritanceNode) node;
+
+            if (!inheritance.getGroupName()
+                    .equalsIgnoreCase(primaryGroup)) {
+
+                continue;
+            }
+
+            /*
+             * Permanent rank
+             */
+            if (!node.hasExpiry()) {
+                return "LifeTime";
+            }
+
+            /*
+             * Temporary rank
+             */
+            final Duration duration =
+                    node.getExpiryDuration();
+
+            if (duration == null) {
+                return "LifeTime";
+            }
+
+            if (duration.isNegative()
+                    || duration.isZero()) {
+
+                return "Expired";
+            }
+
+            return formatDuration(duration);
+        }
+
+        /*
+         * No temporary node found.
+         */
+        return "LifeTime";
+    }
+
+    /*
+     * Format remaining rank duration.
+     */
+    private String formatDuration(
+            final Duration duration) {
+
+        long seconds =
+                duration.getSeconds();
+
+        if (seconds <= 0) {
+            return "Expired";
+        }
+
+        final long years =
+                seconds / 31536000L;
+
+        seconds %= 31536000L;
+
+        final long months =
+                seconds / 2592000L;
+
+        seconds %= 2592000L;
+
+        final long days =
+                seconds / 86400L;
+
+        seconds %= 86400L;
+
+        final long hours =
+                seconds / 3600L;
+
+        seconds %= 3600L;
+
+        final long minutes =
+                seconds / 60L;
+
+        final StringBuilder result =
+                new StringBuilder();
+
+        if (years > 0) {
+
+            result.append(years)
+                    .append(
+                            years == 1
+                                    ? " year"
+                                    : " years"
+                    );
+        }
+
+        if (months > 0) {
+
+            if (result.length() > 0) {
+                result.append(" ");
+            }
+
+            result.append(months)
+                    .append(
+                            months == 1
+                                    ? " month"
+                                    : " months"
+                    );
+        }
+
+        if (days > 0) {
+
+            if (result.length() > 0) {
+                result.append(" ");
+            }
+
+            result.append(days)
+                    .append(
+                            days == 1
+                                    ? " day"
+                                    : " days"
+                    );
+        }
+
+        if (hours > 0) {
+
+            if (result.length() > 0) {
+                result.append(" ");
+            }
+
+            result.append(hours)
+                    .append(
+                            hours == 1
+                                    ? " hour"
+                                    : " hours"
+                    );
+        }
+
+        if (minutes > 0) {
+
+            if (result.length() > 0) {
+                result.append(" ");
+            }
+
+            result.append(minutes)
+                    .append(
+                            minutes == 1
+                                    ? " minute"
+                                    : " minutes"
+                    );
+        }
+
+        if (result.length() == 0) {
+            return "Less than 1 minute";
+        }
+
+        return result.toString();
+    }
+
+    /*
+     * Account Age
+     *
+     * Based on player's first join
+     * timestamp stored by Bukkit.
+     */
+    private String getAccountAge(
+            final Player player) {
+
+        final long firstPlayed =
+                player.getFirstPlayed();
+
+        if (firstPlayed <= 0) {
+            return "Unknown";
+        }
+
+        long seconds =
+                (System.currentTimeMillis()
+                        - firstPlayed) / 1000L;
+
+        if (seconds < 0) {
+            return "Unknown";
+        }
+
+        final long years =
+                seconds / 31536000L;
+
+        seconds %= 31536000L;
+
+        final long months =
+                seconds / 2592000L;
+
+        seconds %= 2592000L;
+
+        final long days =
+                seconds / 86400L;
+
+        seconds %= 86400L;
+
+        final long hours =
+                seconds / 3600L;
+
+        final StringBuilder result =
+                new StringBuilder();
+
+        if (years > 0) {
+
+            result.append(years)
+                    .append(
+                            years == 1
+                                    ? " year"
+                                    : " years"
+                    );
+        }
+
+        if (months > 0) {
+
+            if (result.length() > 0) {
+                result.append(" ");
+            }
+
+            result.append(months)
+                    .append(
+                            months == 1
+                                    ? " month"
+                                    : " months"
+                    );
+        }
+
+        if (days > 0) {
+
+            if (result.length() > 0) {
+                result.append(" ");
+            }
+
+            result.append(days)
+                    .append(
+                            days == 1
+                                    ? " day"
+                                    : " days"
+                    );
+        }
+
+        /*
+         * Show hours only for accounts
+         * younger than one day.
+         */
+        if (hours > 0
+                && result.length() == 0) {
+
+            result.append(hours)
+                    .append(
+                            hours == 1
+                                    ? " hour"
+                                    : " hours"
+                    );
+        }
+
+        if (result.length() == 0) {
+            return "Less than 1 hour";
+        }
+
+        return result.toString();
     }
 
     String buildFormat(
@@ -738,3 +1034,4 @@ public final class LPC extends JavaPlugin implements Listener {
         return result;
     }
 }
+```
