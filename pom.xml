@@ -10,10 +10,14 @@
     <groupId>com.infiniteplugins</groupId>
     <artifactId>lpc-hover</artifactId>
     <version>3.7.2</version>
+
     <packaging>jar</packaging>
 
     <name>LPC-Hover</name>
-    <description>LPC 3.7.2 with player hover/click support for Minecraft 1.8.8</description>
+
+    <description>
+        LPC 3.7.2 with player hover, click, rank expiration and account age support
+    </description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -35,6 +39,12 @@
             <url>https://repo.lucko.me/</url>
         </repository>
 
+        <!-- Sonatype -->
+        <repository>
+            <id>sonatype-nexus-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+
     </repositories>
 
     <dependencies>
@@ -44,6 +54,14 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.8.8-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- BungeeCord Chat API -->
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-chat</artifactId>
+            <version>1.8-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 
