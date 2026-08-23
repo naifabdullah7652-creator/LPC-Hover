@@ -5,10 +5,10 @@ import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
+
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -18,7 +18,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Duration;
-import java.util.UUID;
 
 public class LpcHoverPlugin extends JavaPlugin implements Listener {
 
@@ -29,8 +28,9 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
 
         try {
             luckPerms = LuckPermsProvider.get();
-        } catch (IllegalStateException e) {
-            getLogger().severe("LuckPerms was not found!");
+        } catch (Exception e) {
+            getLogger().severe("Could not hook into LuckPerms!");
+            e.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -46,8 +46,8 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
 
         Player player = event.getPlayer();
 
-        String message = event.getMessage();
         String name = player.getName();
+        String message = event.getMessage();
 
         String rank = "Player";
         String expired = "LifeTime";
@@ -55,18 +55,17 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
         /*
          * Get LuckPerms user
          */
-        User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+        User user = luckPerms
+                .getUserManager()
+                .getUser(player.getUniqueId());
 
         if (user != null) {
 
-            /*
-             * Get primary rank
-             */
             rank = user.getPrimaryGroup();
 
             /*
-             * Find the inheritance node
-             * matching the primary rank.
+             * Find temporary/permanent
+             * inheritance node.
              */
             for (Node node : user.getNodes()) {
 
@@ -74,36 +73,27 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
                     continue;
                 }
 
-                InheritanceNode inheritanceNode =
+                InheritanceNode inheritance =
                         (InheritanceNode) node;
 
-                if (!inheritanceNode.getGroupName()
+                if (!inheritance.getGroupName()
                         .equalsIgnoreCase(rank)) {
                     continue;
                 }
 
-                /*
-                 * Permanent rank
-                 */
-                if (!inheritanceNode.hasExpiry()) {
+                if (!inheritance.hasExpiry()) {
 
                     expired = "LifeTime";
 
                 } else {
 
-                    /*
-                     * Temporary rank
-                     */
                     Duration duration =
-                            inheritanceNode.getExpiryDuration();
+                            inheritance.getExpiryDuration();
 
-                    if (duration == null) {
-
-                        expired = "Expired";
-
-                    } else {
-
+                    if (duration != null) {
                         expired = formatDuration(duration);
+                    } else {
+                        expired = "Expired";
                     }
                 }
 
@@ -113,9 +103,6 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
 
         /*
          * Account Age
-         *
-         * Bukkit stores the player's
-         * first join timestamp.
          */
         String accountAge =
                 getAccountAge(player.getFirstPlayed());
@@ -123,40 +110,66 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
         /*
          * Player name
          */
-        TextComponent component =
+        TextComponent nameComponent =
                 new TextComponent(
                         ChatColor.WHITE + name
                 );
 
         /*
-         * Hover information
+         * Build Hover line by line
          */
-        String hoverText =
-                ChatColor.YELLOW + "Player: "
-                        + ChatColor.WHITE + name
-                        + "\n"
-                        + ChatColor.YELLOW + "Rank: "
-                        + ChatColor.WHITE + rank
-                        + "\n"
-                        + ChatColor.YELLOW + "Expired: "
-                        + ChatColor.WHITE + expired
-                        + "\n"
-                        + ChatColor.YELLOW + "Account Age: "
-                        + ChatColor.WHITE + accountAge;
+        TextComponent hover =
+                new TextComponent();
 
-        component.setHoverEvent(
+        TextComponent line1 =
+                new TextComponent(
+                        ChatColor.YELLOW + "Player: "
+                                + ChatColor.WHITE
+                                + name
+                );
+
+        TextComponent line2 =
+                new TextComponent(
+                        ChatColor.YELLOW + "\nRank: "
+                                + ChatColor.WHITE
+                                + rank
+                );
+
+        TextComponent line3 =
+                new TextComponent(
+                        ChatColor.YELLOW + "\nExpired: "
+                                + ChatColor.WHITE
+                                + expired
+                );
+
+        TextComponent line4 =
+                new TextComponent(
+                        ChatColor.YELLOW + "\nAccount Age: "
+                                + ChatColor.WHITE
+                                + accountAge
+                );
+
+        hover.addExtra(line1);
+        hover.addExtra(line2);
+        hover.addExtra(line3);
+        hover.addExtra(line4);
+
+        /*
+         * Hover
+         */
+        nameComponent.setHoverEvent(
                 new HoverEvent(
                         HoverEvent.Action.SHOW_TEXT,
-                        new ComponentBuilder(
-                                hoverText
-                        ).create()
+                        new TextComponent[]{
+                                hover
+                        }
                 )
         );
 
         /*
-         * Click player name to suggest /msg
+         * Click -> /msg
          */
-        component.setClickEvent(
+        nameComponent.setClickEvent(
                 new ClickEvent(
                         ClickEvent.Action.SUGGEST_COMMAND,
                         "/msg " + name + " "
@@ -164,12 +177,12 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
         );
 
         /*
-         * Final chat message
+         * Final message
          */
         TextComponent finalMessage =
                 new TextComponent();
 
-        finalMessage.addExtra(component);
+        finalMessage.addExtra(nameComponent);
 
         finalMessage.addExtra(
                 new TextComponent(
@@ -180,7 +193,7 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
         );
 
         /*
-         * Send message to everyone
+         * Send to players
          */
         for (Player online :
                 getServer().getOnlinePlayers()) {
@@ -190,14 +203,11 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
             );
         }
 
-        /*
-         * Prevent the normal chat message
-         */
         event.setCancelled(true);
     }
 
     /*
-     * Format rank expiration duration
+     * Format rank expiration
      */
     private String formatDuration(Duration duration) {
 
@@ -270,8 +280,7 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
     }
 
     /*
-     * Calculate Account Age
-     * from player's first join.
+     * Account Age
      */
     private String getAccountAge(long firstPlayed) {
 
@@ -279,48 +288,35 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
             return "Unknown";
         }
 
-        long now =
-                System.currentTimeMillis();
-
         long difference =
-                now - firstPlayed;
+                System.currentTimeMillis()
+                        - firstPlayed;
 
         if (difference < 0) {
             return "Unknown";
         }
 
-        Duration duration =
-                Duration.ofMillis(
-                        difference
-                );
-
-        long seconds =
-                duration.getSeconds();
+        long totalSeconds =
+                difference / 1000;
 
         long days =
-                seconds / 86400;
+                totalSeconds / 86400;
 
-        seconds %= 86400;
+        totalSeconds %= 86400;
 
         long hours =
-                seconds / 3600;
+                totalSeconds / 3600;
 
-        seconds %= 3600;
+        totalSeconds %= 3600;
 
         long minutes =
-                seconds / 60;
+                totalSeconds / 60;
 
-        /*
-         * Years
-         */
         long years =
                 days / 365;
 
         days %= 365;
 
-        /*
-         * Months
-         */
         long months =
                 days / 30;
 
@@ -367,9 +363,6 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
             }
         }
 
-        /*
-         * For accounts younger than one day
-         */
         if (result.length() == 0) {
 
             if (hours > 0) {
@@ -388,6 +381,7 @@ public class LpcHoverPlugin extends JavaPlugin implements Listener {
 
                 if (minutes != 1) {
                     result.append("s");
+
                 }
 
             } else {
