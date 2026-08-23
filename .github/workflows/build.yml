@@ -1,7 +1,8 @@
-name: Build LPC-Hover 3.7.2
+name: Build LPC-Hover-Nova-1.8.8
 
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   build:
@@ -9,21 +10,58 @@ jobs:
 
     steps:
 
+      # تحميل المشروع
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 8
+      # تثبيت Java 8
+      - name: Setup Java 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
-          cache: maven
 
-      - name: Build with Maven
-        run: mvn -f pom.xml clean package -U
+      # إنشاء مجلد lib
+      - name: Create lib folder
+        run: |
+          mkdir -p lib
 
-      - name: Upload JAR
+      # تحميل Spigot 1.8.8
+      - name: Download Spigot 1.8.8
+        run: |
+          curl -L \
+            -o lib/Spigot-1.8.8.jar \
+            "https://repo.aikar.co/nexus/content/repositories/aikar/org/spigotmc/spigot/1.8.8-R0.1-SNAPSHOT/spigot-1.8.8-R0.1-SNAPSHOT.jar"
+
+          echo "Spigot-1.8.8.jar downloaded successfully."
+
+          test -f lib/Spigot-1.8.8.jar
+
+          ls -lh lib/Spigot-1.8.8.jar
+
+      # التأكد من وجود الملف
+      - name: Verify Spigot
+        run: |
+          echo "Checking Spigot JAR..."
+          test -f lib/Spigot-1.8.8.jar
+          echo "Spigot-1.8.8.jar found."
+
+      # بناء المشروع
+      - name: Build LPC-Hover
+        run: |
+          mvn clean package
+
+      # التأكد من وجود الـJAR الناتج
+      - name: Verify build
+        run: |
+          echo "Checking generated JAR..."
+          ls -lh target/
+          test -f target/LPC-Hover-Nova-1.8.8.jar
+          echo "LPC-Hover-Nova-1.8.8.jar created successfully."
+
+      # رفع الـJAR كـArtifact
+      - name: Upload Plugin JAR
         uses: actions/upload-artifact@v4
         with:
-          name: LPC-Hover-3.7.2
-          path: target/LPC-Hover-3.7.2.jar
+          name: LPC-Hover-Nova-1.8.8
+          path: target/LPC-Hover-Nova-1.8.8.jar
