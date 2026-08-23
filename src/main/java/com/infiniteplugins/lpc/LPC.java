@@ -1,6 +1,7 @@
 package com.infiniteplugins.lpc;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.cacheddata.CachedMetaData;
 import net.luckperms.api.model.user.User;
@@ -93,7 +94,7 @@ public final class LPC extends JavaPlugin implements Listener {
         }
 
         getLogger().info(
-                "LPC-Hover 3.7.2 enabled for Spigot/Paper 1.8.8."
+                "LPC-Hover-Nova 1.8.8 enabled."
         );
     }
 
@@ -197,23 +198,15 @@ public final class LPC extends JavaPlugin implements Listener {
 
             sender.sendMessage(
                     colorize(
-                            "&7Username-color: &f"
-                                    + (meta.getMetaValue(
-                                    "username-color") != null
-                                    ? meta.getMetaValue(
-                                    "username-color")
-                                    : "&cnone")
+                            "&7Rank Expired: &f"
+                                    + getRankExpiration(target)
                     )
             );
 
             sender.sendMessage(
                     colorize(
-                            "&7Message-color: &f"
-                                    + (meta.getMetaValue(
-                                    "message-color") != null
-                                    ? meta.getMetaValue(
-                                    "message-color")
-                                    : "&cnone")
+                            "&7Account Age: &f"
+                                    + getAccountAge(target)
                     )
             );
 
@@ -384,23 +377,24 @@ public final class LPC extends JavaPlugin implements Listener {
                             player.getName()
                     );
 
+                    String hoverText =
+                            "&6Player: &f"
+                                    + player.getName()
+                                    + "\n"
+                                    + "&6Rank: &f"
+                                    + getRank(player)
+                                    + "\n"
+                                    + "&6Expired: &f"
+                                    + getRankExpiration(player)
+                                    + "\n"
+                                    + "&6Account Age: &f"
+                                    + getAccountAge(player);
+
                     name.setHoverEvent(
                             new HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
                                     new ComponentBuilder(
-                                            colorize(
-                                                    "&6Player: &f"
-                                                            + player.getName()
-                                                            + "\n"
-                                                            + "&6Rank: &f"
-                                                            + getRank(player)
-                                                            + "\n"
-                                                            + "&6Expired: &f"
-                                                            + getRankExpiration(player)
-                                                            + "\n"
-                                                            + "&6Account Age: &f"
-                                                            + getAccountAge(player)
-                                            )
+                                            colorize(hoverText)
                                     ).create()
                             )
                     );
@@ -449,7 +443,7 @@ public final class LPC extends JavaPlugin implements Listener {
     private String getRankExpiration(
             final Player player) {
 
-        final User user =
+        User user =
                 luckPerms
                         .getUserManager()
                         .getUser(player.getUniqueId());
@@ -458,17 +452,17 @@ public final class LPC extends JavaPlugin implements Listener {
             return "LifeTime";
         }
 
-        final String primaryGroup =
+        String primaryGroup =
                 getRank(player);
 
-        for (final Node node :
+        for (Node node :
                 user.getNodes()) {
 
             if (!(node instanceof InheritanceNode)) {
                 continue;
             }
 
-            final InheritanceNode inheritance =
+            InheritanceNode inheritance =
                     (InheritanceNode) node;
 
             if (!inheritance.getGroupName()
@@ -481,7 +475,7 @@ public final class LPC extends JavaPlugin implements Listener {
                 return "LifeTime";
             }
 
-            final Duration duration =
+            Duration duration =
                     node.getExpiryDuration();
 
             if (duration == null) {
@@ -510,61 +504,23 @@ public final class LPC extends JavaPlugin implements Listener {
             return "Expired";
         }
 
-        final long years =
-                seconds / 31536000L;
-
-        seconds %= 31536000L;
-
-        final long months =
-                seconds / 2592000L;
-
-        seconds %= 2592000L;
-
-        final long days =
+        long days =
                 seconds / 86400L;
 
         seconds %= 86400L;
 
-        final long hours =
+        long hours =
                 seconds / 3600L;
 
         seconds %= 3600L;
 
-        final long minutes =
+        long minutes =
                 seconds / 60L;
 
-        final StringBuilder result =
+        StringBuilder result =
                 new StringBuilder();
 
-        if (years > 0) {
-
-            result.append(years)
-                    .append(
-                            years == 1
-                                    ? " year"
-                                    : " years"
-                    );
-        }
-
-        if (months > 0) {
-
-            if (result.length() > 0) {
-                result.append(" ");
-            }
-
-            result.append(months)
-                    .append(
-                            months == 1
-                                    ? " month"
-                                    : " months"
-                    );
-        }
-
         if (days > 0) {
-
-            if (result.length() > 0) {
-                result.append(" ");
-            }
 
             result.append(days)
                     .append(
@@ -612,7 +568,7 @@ public final class LPC extends JavaPlugin implements Listener {
     private String getAccountAge(
             final Player player) {
 
-        final long firstPlayed =
+        long firstPlayed =
                 player.getFirstPlayed();
 
         if (firstPlayed <= 0) {
@@ -627,56 +583,18 @@ public final class LPC extends JavaPlugin implements Listener {
             return "Unknown";
         }
 
-        final long years =
-                seconds / 31536000L;
-
-        seconds %= 31536000L;
-
-        final long months =
-                seconds / 2592000L;
-
-        seconds %= 2592000L;
-
-        final long days =
+        long days =
                 seconds / 86400L;
 
         seconds %= 86400L;
 
-        final long hours =
+        long hours =
                 seconds / 3600L;
 
-        final StringBuilder result =
+        StringBuilder result =
                 new StringBuilder();
 
-        if (years > 0) {
-
-            result.append(years)
-                    .append(
-                            years == 1
-                                    ? " year"
-                                    : " years"
-                    );
-        }
-
-        if (months > 0) {
-
-            if (result.length() > 0) {
-                result.append(" ");
-            }
-
-            result.append(months)
-                    .append(
-                            months == 1
-                                    ? " month"
-                                    : " months"
-                    );
-        }
-
         if (days > 0) {
-
-            if (result.length() > 0) {
-                result.append(" ");
-            }
 
             result.append(days)
                     .append(
@@ -735,9 +653,7 @@ public final class LPC extends JavaPlugin implements Listener {
         }
 
         if (format == null) {
-
-            format =
-                    "{prefix}{name}&r: {message}";
+            format = "{prefix}{name}&r: {message}";
         }
 
         final String prefix =
@@ -842,12 +758,12 @@ public final class LPC extends JavaPlugin implements Listener {
             final Player player,
             final String message) {
 
-        final boolean colors =
+        boolean colors =
                 player.hasPermission(
                         "lpc.colorcodes"
                 );
 
-        final boolean rgb =
+        boolean rgb =
                 player.hasPermission(
                         "lpc.rgbcodes"
                 );
@@ -908,7 +824,7 @@ public final class LPC extends JavaPlugin implements Listener {
 
         while (matcher.find()) {
 
-            final String group =
+            String group =
                     matcher.group(1);
 
             matcher.appendReplacement(
@@ -937,7 +853,7 @@ public final class LPC extends JavaPlugin implements Listener {
         matcher =
                 BUKKIT_HEX_PATTERN.matcher(result);
 
-        final StringBuffer bukkitBuffer =
+        StringBuffer bukkitBuffer =
                 new StringBuffer(
                         result.length()
                 );
