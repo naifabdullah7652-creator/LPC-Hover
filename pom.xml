@@ -13,44 +13,75 @@
     <packaging>jar</packaging>
 
     <name>LPC-Hover-Nova</name>
-
     <description>
-        LPC 3.7.2 for Minecraft 1.8.8 with LuckPerms hover information
+        LPC Hover for Minecraft 1.8.8 with LuckPerms, PlaceholderAPI,
+        Rank expiration and Account Age
     </description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
     <repositories>
 
+        <!-- Spigot -->
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+
+        <!-- LuckPerms -->
         <repository>
             <id>luckperms</id>
             <url>https://repo.lucko.me/</url>
+        </repository>
+
+        <!-- PlaceholderAPI -->
+        <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+
+        <!-- Sonatype -->
+        <repository>
+            <id>sonatype-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
 
     </repositories>
 
     <dependencies>
 
-        <!-- Spigot 1.8.8 -->
+        <!--
+            Spigot 1.8.8
+            The GitHub Actions workflow downloads this file to:
+            lib/Spigot-1.8.8.jar
+        -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-1.8.8</artifactId>
             <version>1.8.8</version>
             <scope>system</scope>
-            <systemPath>
-                ${project.basedir}/lib/Spigot-1.8.8.jar
-            </systemPath>
+            <systemPath>${project.basedir}/lib/Spigot-1.8.8.jar</systemPath>
         </dependency>
 
-        <!-- LuckPerms API -->
+        <!-- LuckPerms API 5.3.86 -->
         <dependency>
             <groupId>net.luckperms</groupId>
             <artifactId>api</artifactId>
-            <version>5.3</version>
+            <version>5.3.86</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- PlaceholderAPI -->
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.6</version>
             <scope>provided</scope>
         </dependency>
 
@@ -62,6 +93,7 @@
 
         <plugins>
 
+            <!-- Java 8 Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -74,6 +106,7 @@
                 </configuration>
             </plugin>
 
+            <!-- Resources -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -84,10 +117,19 @@
                 </configuration>
             </plugin>
 
+            <!-- JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.3.0</version>
+
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
 
         </plugins>
